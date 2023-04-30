@@ -3,7 +3,7 @@
 
 HARBOR_VERSION=2.6.0
 HARBOR_BASE=/apps
-HARBOR_NAME=harbor.wang.org
+HARBOR_NAME=reg.kubesphere.com
 
 DOCKER_VERSION="20.10.10"
 #DOCKER_VERSION="19.03.14"
@@ -35,8 +35,8 @@ color () {
     echo -n "["
     if [ $2 = "success" -o $2 = "0" ] ;then
         ${SETCOLOR_SUCCESS}
-        echo -n $"  OK  "    
-    elif [ $2 = "failure" -o $2 = "1"  ] ;then 
+        echo -n $"  OK  "
+        elif [ $2 = "failure" -o $2 = "1"  ] ;then
         ${SETCOLOR_FAILURE}
         echo -n $"FAILED"
     else
@@ -45,7 +45,7 @@ color () {
     fi
     ${SETCOLOR_NORMAL}
     echo -n "]"
-    echo 
+    echo
 }
 
 install_docker(){
@@ -58,7 +58,7 @@ gpgcheck=0
 #baseurl=https://mirrors.aliyun.com/docker-ce/linux/centos/7/x86_64/stable/
 baseurl=https://mirrors.tuna.tsinghua.edu.cn/docker-ce/linux/centos/7/x86_64/stable/
 EOF
-        else     
+        else
             cat >  /etc/yum.repos.d/docker.repo  <<EOF
 [docker]
 name=docker
@@ -67,19 +67,19 @@ gpgcheck=0
 baseurl=https://mirrors.tuna.tsinghua.edu.cn/docker-ce/linux/centos/8/x86_64/stable/
 EOF
         fi
-        yum clean all 
+        yum clean all
         ${COLOR_FAILURE} "Docker有以下版本"${END}
         yum list docker-ce --showduplicates
         ${COLOR_FAILURE}"5秒后即将安装: docker-"${DOCKER_VERSION}" 版本....."${END}
         ${COLOR_FAILURE}"如果想安装其它Docker版本，请按ctrl+c键退出，修改版本再执行"${END}
         sleep 5
         yum -y install docker-ce-$DOCKER_VERSION docker-ce-cli-$DOCKER_VERSION  \
-            || { color "Base,Extras的yum源失败,请检查yum源配置" 1;exit; }
+        || { color "Base,Extras的yum源失败,请检查yum源配置" 1;exit; }
     else
         dpkg -s docker-ce &> /dev/null && $COLOR"Docker已安装，退出" 1 && exit
-        apt update || { color "更新包索引失败" 1 ; exit 1; }  
+        apt update || { color "更新包索引失败" 1 ; exit 1; }
         apt  -y install apt-transport-https ca-certificates curl software-properties-common || \
-            { color "安装相关包失败" 1 ; exit 2;  }  
+        { color "安装相关包失败" 1 ; exit 2;  }
         curl -fsSL https://mirrors.tuna.tsinghua.edu.cn/docker-ce/linux/ubuntu/gpg | sudo apt-key add -
         add-apt-repository "deb [arch=amd64] https://mirrors.tuna.tsinghua.edu.cn/docker-ce/linux/ubuntu $(lsb_release -cs) stable"
         apt update
@@ -96,7 +96,7 @@ EOF
         color "安装软件包失败，请检查网络配置" 1
         exit
     fi
-
+    
     mkdir -p /etc/docker
     tee /etc/docker/daemon.json <<-'EOF'
 {
@@ -123,11 +123,11 @@ install_docker_compose(){
             mv ${DOCKER_COMPOSE_FILE} /usr/bin/docker-compose
         fi
         chmod +x /usr/bin/docker-compose
-    else 
+    else
         apt -y install docker-compose
     fi
     if docker-compose --version ;then
-        ${COLOR_SUCCESS}"Docker Compose 安装完成"${END} 
+        ${COLOR_SUCCESS}"Docker Compose 安装完成"${END}
     else
         ${COLOR_FAILURE}"Docker compose 安装失败"${END}
         exit
@@ -170,15 +170,15 @@ ExecStop=/usr/bin/docker-compose -f ${HARBOR_BASE}/harbor/docker-compose.yml dow
 [Install]
 WantedBy=multi-user.target
 EOF
-
-    systemctl daemon-reload 
+    
+    systemctl daemon-reload
     systemctl enable  harbor &>/dev/null ||  ${COLOR}"Harbor已配置为开机自动启动"${END}
-    if [ $?  -eq 0 ];then  
-        echo 
+    if [ $?  -eq 0 ];then
+        echo
         color "Harbor安装完成!" 0
         echo "-------------------------------------------------------------------"
-        echo -e "请访问链接: \E[32;1mhttp://${HARBOR_IP}/\E[0m" 
-        echo -e "用户和密码: \E[32;1madmin/${HARBOR_ADMIN_PASSWORD}\E[0m" 
+        echo -e "请访问链接: \E[32;1mhttp://${HARBOR_IP}/\E[0m"
+        echo -e "用户和密码: \E[32;1madmin/${HARBOR_ADMIN_PASSWORD}\E[0m"
     else
         color "Harbor安装失败!" 1
         exit
