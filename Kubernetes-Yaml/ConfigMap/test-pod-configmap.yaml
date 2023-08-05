@@ -1,0 +1,26 @@
+# test-pod-configmap.yaml
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-env-pod
+  labels:
+    app: configmap
+spec:
+  containers:
+  - name: test-env
+    image: alpine
+    command: ["/bin/sh", "-c", "env; sleep 3600"]
+    imagePullPolicy: IfNotPresent
+    env:
+    - name: JAVA_VM_OPTS
+      valueFrom: 
+        configMapKeyRef:
+          name: test-env-config # ConfigMap的名称
+          key: JAVA_OPTS_TEST   # 表示从 name 的 ConfigMap 中获取名称为 key 的 value，将其赋值给本地环境变量：JAVA_VM_OPTS
+    - name: APP
+      valueFrom: 
+        configMapKeyRef:
+          name: test-env-config # ConfigMap的名称
+          key: APP_NAME
+  restartPolicy: Never

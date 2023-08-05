@@ -1,0 +1,36 @@
+# nginx-configmap-subpath-deployment.yaml
+apiVersion: apps/v1 # Deployment API 版本
+kind: Deployment # 资源类型为 Deployment
+metadata: # 元数据消息
+  # 标签信息
+  labels:
+    app: nginx-deploy
+  name: nginx-deploy # Deployment的名称
+  namespace: default # 所在的命名空间
+# Deployment的规约，期望
+spec:
+  replicas: 1 # 副本数
+  # 选择器，用于找到匹配的RS
+  selector:
+    matchLabels: # 按照标签匹配
+      app: nginx-deploy # 匹配的标签的 key/value
+  # Podtemplate：描述Pod的内容|Pod的模板
+  template:
+    metadata: # Pod的元数据
+      labels: # Pod的标签
+        app: nginx-deploy
+    spec: # Pod的期望信息
+      containers: # Pod中的容器
+      - image: nginx:1.21.6-alpine # 容器的镜像
+        imagePullPolicy: IfNotPresent # 镜像的拉取策略
+        name: nginx # 容器的名称
+        volumeMounts: # 挂载数据卷
+        - name: nginx-conf # 数据卷的名称
+          mountPath: /etc/nginx # 挂载的路径
+      volumes: # 定义数据卷
+      - name: nginx-conf # 数据卷的名称
+        configMap: # 数据卷类型为：configMap
+          name: nginx-conf-cm # configMap 的名称
+          items: # 要将 configMap 中的哪些数据挂载进来
+          - key: nginx.conf # 指定挂载哪个 key
+            path: nginx.conf # 挂载后该 key 重命名

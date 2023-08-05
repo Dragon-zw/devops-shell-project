@@ -1,0 +1,48 @@
+apiVersion: v1 # Service API 版本
+kind: Service # Service 类型的资源
+metadata:
+  name: nginx # Service 的名称
+  labels: # Service 的标签
+    app: nginx
+spec:
+  ports: # Service 暴露的端口
+  - port: 80
+    name: web
+  clusterIP: None # 使用 Headless 无头服务
+  selector: # Service 选择器
+    app: nginx
+---
+apiVersion: apps/v1 # StatefulSet API 版本
+kind: StatefulSet # StatefulSet 类型的资源
+metadata: # StatefulSet 元数据
+  name: web # StatefulSet 对象的名称
+spec:
+  selector: # 选择器，注意：StatefulSet 不会维护RS，即使用的是STS自身的机制
+    matchLabels:
+      app: nginx
+  serviceName: "nginx" # 使用哪个 Service 来管理 DNS
+  replicas: 2 # 副本数
+  template: # Pod的模板
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.21.6-alpine # 容器的镜像
+        ports: # 容器内部的暴露的端口
+        - containerPort: 80 # 具体暴露的端口号
+          name: web # 该端口配置的名字
+#       volumeMounts: # 加载数据卷
+#       - name: www   # 指定加载哪个数据卷
+#         mountPath: /usr/share/nginx/html # 加载到容器中的哪个目录
+# volumeClaimTemplates: # 数据卷模板
+# - metadata: 	# 数据卷的元数据
+#     name: www # 数据卷的名字
+#     annotations: # 数据卷的注解(元数据的描述)
+#       volume.alpha.kubernetes.io/storage-class: anything
+#   spec: # 数据卷的期望配置
+#     accessModes: [ "ReadWriteOnce" ] # 访问模式
+#     resources:  # 数据卷的资源
+#       requests: # 需要1G的存储资源
+#         storage: 1Gi

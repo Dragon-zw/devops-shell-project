@@ -1,0 +1,59 @@
+# create-downardAPI-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: downloadapi-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-downloadapi
+  # Pod 模板
+  template:
+    metadata:
+      labels:
+        app: my-downloadapi
+    spec:
+      # 容器信息
+      containers:
+      - name: my-app-downloadapi
+        image: nginx
+        resources:
+          # 容器的资源请求
+          requests:
+            # CPU核数: 0.015个
+            cpu: 15m
+          # 容器的资源限制
+          limits:
+            # 内存: 40MB
+            memory: 40Mi
+        # 定义容器的环境变量
+        env:
+        - name: my_pod_name
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: my_pod_ns
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: my_pod_ip
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: my_node_name
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: my_cpu_request
+          valueFrom:
+            resourceFieldRef:
+              resource: requests.cpu
+              # 设定基数单位: 0.001个
+              divisor: 1m
+        - name: my_memory_limit
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
+              # 设定基数单位: 1MB
+              divisor: 1Mi

@@ -1,0 +1,135 @@
+# 创建 filebeat.yaml 并部署
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: filebeat-config
+  namespace: kube-logging
+  labels:
+    k8s-app: filebeat
+data:
+  filebeat.yml: "filebeat.inputs: \n- type: container \n  enable: true\n  paths: \n    - /var/log/containers/*.log # 这里是filebeat采集挂载到pod中的日志目录 \n  processors: \n    - add_kubernetes_metadata: # 添加k8s的字段用于后续的数据清洗 \n        host: ${NODE_NAME}\n        matchers: \n        - logs_path: \n            logs_path: \"/var/log/containers/\" \n# output.kafka:  #如果日志量较大，es中的日志有延迟，可以选择在filebeat和logstash中间加入kafka \n#  hosts: [\"kafka-log-01:9092\", \"kafka-log-02:9092\", \"kafka-log-03:9092\"] \n# topic: 'topic-test-log' \n#  version: 2.0.0 \noutput.logstash: #因为还需要部署logstash进行数据的清洗，因此filebeat是把数据推到logstash中 \n   hosts: [\"logstash:5044\"] \n   enabled: true "
+---
+apiVersion: v1
+kind: ServiceAccount # 服务账号
+metadata:
+  name: filebeat
+  namespace: kube-logging
+  labels:
+    k8s-app: filebeat
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole # 集群角色
+metadata:
+  name: filebeat
+  labels:
+    k8s-app: filebeat
+rules:
+- apiGroups: [""] # "" indicates the core API group 
+  resources:
+  - namespaces
+  - pods
+  verbs: ["get", "watch", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding # 集群角色绑定
+metadata:
+  name: filebeat
+subjects:
+- kind: ServiceAccount
+  name: filebeat
+  namespace: kube-logging
+roleRef:
+  kind: ClusterRole
+  name: filebeat
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: filebeat
+  namespace: kube-logging
+  labels:
+    k8s-app: filebeat
+spec:
+  selector:
+    matchLabels:
+      k8s-app: filebeat
+  template:
+    metadata:
+      labels:
+        k8s-app: filebeat
+    spec:
+      serviceAccountName: filebeat
+      terminationGracePeriodSeconds: 30
+      containers:
+      - name: filebeat
+        image: docker.io/kubeimages/filebeat:7.9.3 # 该镜像支持arm64和amd64两种架构 
+        args: ["-c", "/etc/filebeat.yml", "-e", "-httpprof", "0.0.0.0:6060"]
+        #ports: 
+        #  - containerPort: 6060 
+        #    hostPort: 6068 
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: ELASTICSEARCH_HOST
+          value: elasticsearch-logging
+        - name: ELASTICSEARCH_PORT
+          value: "9200"
+        securityContext:
+          runAsUser: 0
+          # If using Red Hat OpenShift uncomment this: 
+        #privileged: true 
+        resources:
+          limits:
+            memory: 1000Mi
+            cpu: 1000m
+          requests:
+            memory: 100Mi
+            cpu: 100m
+        volumeMounts:
+        - name: config # 挂载的是filebeat的配置文件 
+          mountPath: /etc/filebeat.yml
+          readOnly: true
+          subPath: filebeat.yml
+        - name: data # 持久化filebeat数据到宿主机上 
+          mountPath: /usr/share/filebeat/data
+        - name: varlibdockercontainers # 这里主要是把宿主机上的源日志目录挂载到filebeat容器中,如果没有修改docker或者containerd的runtime进行了标准的日志落盘路径，可以把mountPath改为/var/lib 
+          mountPath: /var/lib
+          readOnly: true
+        - name: varlog # 这里主要是把宿主机上/var/log/pods和/var/log/containers的软链接挂载到filebeat容器中 
+          mountPath: /var/log/
+          readOnly: true
+        - name: timezone
+          mountPath: /etc/localtime
+      volumes:
+      - name: config
+        configMap:
+          defaultMode: 0600
+          name: filebeat-config
+      - name: varlibdockercontainers
+        hostPath: # 如果没有修改docker或者containerd的runtime进行了标准的日志落盘路径，可以把path改为/var/lib 
+          path: /var/lib # 是 Docker 原生的日志的目录
+      - name: varlog
+        hostPath:
+          path: /var/log/ # 是 Kubernetes 对 Docker 日志收集做的软连接
+      - name: inputs
+        # data folder stores a registry of read status for all files, so we don't send everything again on a Filebeat pod restart 
+        configMap:
+          defaultMode: 0600
+          name: filebeat-inputs
+      - name: data
+        hostPath:
+          path: /data/filebeat-data
+          type: DirectoryOrCreate
+      - name: timezone
+        hostPath:
+          path: /etc/localtime
+      tolerations: #加入容忍能够调度到每一个节点 
+      - effect: NoExecute
+        key: dedicated
+        operator: Equal
+        value: gpu
+      - effect: NoSchedule
+        operator: Exists

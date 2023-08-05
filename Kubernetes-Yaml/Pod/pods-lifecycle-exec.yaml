@@ -1,0 +1,46 @@
+apiVersion: v1 # API 文档版本
+kind: Pod # 资源对象类型，也可以配置为像Deployment、StatefulSet这一类的对象
+metadata: # Pod 相关的元数据，用于描述 Pod 的数据
+  name: nginx-lifecycle-exec # Pod 的名称
+  labels: # 定义 Pod 的标签
+    type: app # 自定义 label 标签，名字为 type，值为 app
+    test: 1.0.0 # 自定义 label 标签，描述 Pod 版本号
+  namespace: 'default' # 命名空间的配置
+spec: # 期望 Pod 按照这里面的描述进行创建
+  containers: # 对于 Pod 中的容器描述
+  - name: nginx # 容器的名称
+    image: nginx:1.21.6-alpine # 指定容器的镜像
+    imagePullPolicy: IfNotPresent # 镜像拉取策略，指定如果本地有就用本地的，如果没有就拉取远程的
+    lifecycle: # 生命周期配置
+      postStart: # 生命周期启动阶段执行的动作，不一定在容器的 command 之前执行
+        exec:
+          command:
+          - sh
+          - -c
+          - "echo '<h1>This postStart Page</h1>' > /usr/share/nginx/html/poststart.html"
+      preStop: # 生命周期结束阶段执行的动作
+        exec:
+          command:
+          - sh
+          - -c
+          - 'echo "sleep finished..." >> /usr/share/nginx/html/prestop.html; sleep 30'
+    resources:
+      requests: # 最少需要多少资源
+        cpu: 100m # 限制 cpu 最少使用 0.1 个核心
+        memory: 128Mi # 限制内存最少使用 128兆
+      limits: # 最多可以用多少资源
+        cpu: 200m # 限制 cpu 最多使用 0.2 个核心
+        memory: 256Mi # 限制 最多使用 256兆
+    command: # 指定容器启动时执行的命令
+    - nginx
+    - -g
+    - 'daemon off;' # nginx -g 'daemon off;'
+    workingDir: /usr/share/nginx/html # 定义容器启动后的工作目录
+    ports:
+    - name: http # 端口名称
+      containerPort: 80 # 描述容器内要暴露什么端口
+      protocol: TCP # 描述该端口是基于哪种协议通信的
+    env: # 环境变量
+    - name: NGINX_VERSION # 环境变量名称
+      value: 'v1.21.6-alpine' # 环境变量的值
+  restartPolicy: OnFailure # 重启策略，只有失败的情况才会重启

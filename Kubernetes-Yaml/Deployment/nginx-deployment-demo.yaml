@@ -1,0 +1,44 @@
+apiVersion: apps/v1 # Deployment API 版本
+kind: Deployment # 资源类型为 Deployment
+metadata: # 元数据信息
+  # annotations 注解：描述对象的数据，要比Label更强大
+  # annotations 可以描述更加多，更细节的内容
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+  # 滚动更新迭代版本
+  generation: 1
+  # 标签信息
+  labels:
+    app: nginx-deploy # 匹配的标签的 key/value 的配置形式(Deployment)
+  name: nginx-deploy # Deployment的名称
+  namespace: default # 所在的命名空间
+# Deployment的规约，期望信息
+spec:
+  replicas: 1 # 副本数
+  # 默认Deployment记录迭代版本历史，进行滚动更新后，保留的历史版本数
+  revisionHistoryLimit: 10
+  # 选择器，用于找到匹配的RS(ReplicaSet)
+  selector:
+    matchLabels: # 按照标签匹配
+      app: nginx-deploy # 匹配的标签的 key/value 的配置形式(RS)
+  # 更新的策略
+  strategy:
+    rollingUpdate: # 滚动更新配置
+      maxSurge: 25% # 进行滚动更新时，更新的个数最多可以超过期望副本数的个数/比例
+      # replicas若是10，最多可以更新2.5个(资源充足的情况下)
+      maxUnavailable: 25% # 进行滚动更新时，最大不可用的个数/比例，表示在所有副本数中，最多可以有多少个数/比例不更新成功
+      # replicas若是10，最多可以有2.5个不能更新成功
+    type: RollingUpdate # 更新类型：采用滚动更新
+  # Podtemplate：描述Pod的内容|Pod的模板
+  template:
+    metadata: # Pod的元数据
+      labels: # Pod的标签
+        app: nginx-deploy # 匹配的标签的 key/value 的配置形式(Pod)
+    spec: # Pod的期望信息
+      containers: # Pod中的容器
+      - image: nginx:1.21.6-alpine # 容器的镜像
+        imagePullPolicy: IfNotPresent # 镜像的拉取策略
+        name: nginx # 容器的名称
+      restartPolicy: Always # 容器重启策略
+      # preStop 钩子函数执行，Pod删除中(Terminating)的宽限期，删除操作最多宽限多长时间(s)
+      terminationGracePeriodSeconds: 30

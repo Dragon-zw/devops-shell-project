@@ -1,0 +1,39 @@
+# nginx-pod-demo.yaml
+apiVersion: apps/v1 # API 发行版本
+kind: Pod # 使用 Pod 资源对象类型，可以配置为Deployment，StatefulSet，DaemonSet等
+metadata: # Pod 相关的元数据，用于描述 Pod 的数据
+  name: nginx-pod # Pod 的名称
+  namespace: "default" # Pod 部署的命名空间，默认部署到 default
+  labels: # 定义 Pod 的标签
+    type: app # 自定义 label 标签，名字为 type，值为 app
+    version: 1.0.0 # 自定义 label 标签，名字为 version，值为 1.0.0
+    app: nginx
+    nginx_version: 1.21.6-alpine
+spec: # Pod 的期望状态，按照 spec 描述进行创建
+  containers: # Pod 内的容器配置
+  - name: nginx-container # 容器的名称
+    image: nginx:1.21.6-alpine # 指定容器的镜像
+    imagePullPolicy: IfNotPresent # 镜像拉取策略，指定如果本地有就用本地的，如果没有就拉取远程的
+    command: # 指定容器启动时执行的命令，是 list 数组的方式
+    - "nginx"
+    - "-g"
+    - "daemon off;" # nginx -g 'daemon off;' -> ["nginx", "-g", "daemon off;"]
+    workingDir: /usr/share/nginx/html # 指定进入终端的默认工作目录
+    resources: # 容器的资源限制
+      requests: # 请求资源，最少需要多少资源
+        cpu: 100m # 限制 CPU 最少使用 0.1 个核心
+        memory: 128Mi # 限制 内存 最少使用 128 兆
+      limits: # 限制资源
+        cpu: 200m # 限制 CPU 最少使用 0.2 个核心
+        memory: 256Mi # 限制 内存 最少使用 256 兆
+    env: # 描述容器的环境变量
+    - name: nginx_version
+      value: "1.21.6-alpine"
+    - name: app
+      value: "nginx"
+    ports: # 暴露的端口
+    - name: web-port # 端口的名称
+      containerPort: 80 # 描述容器内要暴露的端口
+      protocol: TCP # 描述该端口是基于哪种的协议通信
+      hostPort: 10000 # 会将主机的指定端口进行暴露，则会实现访问该hostPort流量会打入到Pod的containerPort
+  restartPolicy: OnFailure # 重启策略，只有失败的情况才会重启

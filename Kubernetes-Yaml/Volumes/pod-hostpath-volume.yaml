@@ -1,0 +1,19 @@
+# pod-hostpath-volume.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-hostpath-pod
+  labels:
+    app: volume
+spec:
+  containers:
+  - image: nginx
+    name: nginx-volume
+    volumeMounts: # 数据卷挂载
+    - mountPath: /test-pd # 挂载到容器的哪个目录
+      name: test-volume # 挂载哪个 volume
+  volumes: # 数据卷配置
+  - name: test-volume # 数据卷名称
+    hostPath: # 与主机共享目录，加载主机中的指定目录到容器中
+      path: /data # 节点中的目录
+      type: DirectoryOrCreate # 检查类型，在挂载前对挂载目录做什么检查操作，有多种选项，默认为空字符串，不做任何检查

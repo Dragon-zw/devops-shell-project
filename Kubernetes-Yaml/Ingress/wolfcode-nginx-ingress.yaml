@@ -1,0 +1,26 @@
+# wolfcode-nginx-ingress.yaml
+apiVersion: networking.k8s.io/v1 # API 版本
+kind: Ingress # 资源类型为 Ingress
+metadata:
+  name: wolfcode-nginx-ingress # Ingress 的名称
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    # 路径重写
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules: # ingress 规则配置，可以配置多个
+  - host: k8s.wolfcode.cn # 域名配置，可以使用通配符 *
+    http:
+      paths: # 相当于 nginx 的 location 配置，可以配置多个
+      - pathType: Prefix # 路径类型，按照路径类型进行匹配 
+        # ImplementationSpecific 需要指定 IngressClass，具体匹配规则以 IngressClass 中的规则为准。
+        # Exact：精确匹配，URL需要与path完全匹配上，且区分大小写的。
+        # Prefix：以 / 作为分隔符来进行前缀匹配
+        backend:
+          service:
+            name: nginx-svc # 代理到哪个 service
+            port:
+              number: 80 # service 的端口
+        path: /api # 前缀匹配，等价于 nginx 中的 location 的路径前缀匹配
+# Ingress -通过指定域名-> service -> endpoint

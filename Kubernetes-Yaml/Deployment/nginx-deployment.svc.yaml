@@ -1,0 +1,55 @@
+# nginx-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  namespace: default
+  labels:
+    app: nginx-deployment
+spec:
+  selector:
+    matchLabels:
+      app: nginx-deployment
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: nginx-deployment
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.21.6-alpine
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 100m
+            memory: 100Mi
+        ports:
+        - containerPort: 80
+          name: nginx-port
+        volumeMounts:
+        - name: localtime
+          mountPath: /etc/localtime
+      volumes:
+      - name: localtime
+        hostPath:
+          path: /usr/share/zoneinfo/Asia/Shanghai
+      restartPolicy: Always
+# nginx-svc.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-svc
+  namespace: default
+spec:
+  selector:
+    app: nginx-deployment
+  type: NodePort
+  ports:
+  - name: nginx-port
+    protocol: TCP
+    port: 80
+    targetPort: 80

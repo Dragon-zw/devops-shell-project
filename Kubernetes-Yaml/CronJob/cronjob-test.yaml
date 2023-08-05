@@ -1,0 +1,25 @@
+# cronjob-test.yaml
+apiVersion: batch/v1
+kind: CronJob # 资源类型：CronJob 定时任务
+metadata:
+  name: cronjob-test # CronJob的名称
+spec:
+  concurrencyPolicy: Allow # 并发调度策略：Allow 允许并发调度，Forbid：不允许并发执行，Replace：如果之前的任务还没执行完，就直接执行新的，放弃上一个任务
+  failedJobsHistoryLimit: 1 # 保留多少个失败的任务
+  successfulJobsHistoryLimit: 3 # 保留多少个成功的任务
+  suspend: false # 是否挂起任务，若为 true 则该任务不会执行
+  # startingDeadlineSeconds: 30 # 间隔多长时间检测失败的任务并重新执行，时间不能小于 10
+  schedule: "* * * * *" # 调度策略
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: cron-busybox
+            image: busybox:1.28.4
+            imagePullPolicy: IfNotPresent
+            command:
+            - /bin/sh
+            - -c
+            - date; echo Hello from the Kubernetes cluster
+          restartPolicy: OnFailure
