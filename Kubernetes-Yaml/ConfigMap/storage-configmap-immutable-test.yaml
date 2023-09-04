@@ -1,0 +1,15 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: config-test
+  namespace: default
+data:
+  author: zhongzhiwei@kubesphere.io
+  file.conf: |
+    [class]
+    kubernetes
+    kubesphere
+    linux
+    go
+    java
+immutable: true

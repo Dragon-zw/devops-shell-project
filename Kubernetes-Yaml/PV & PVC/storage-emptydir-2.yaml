@@ -1,0 +1,31 @@
+# storage-emptydir-2.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "storage-empty-2"
+  namespace: default
+  labels:
+    app: "storage-empty-2"
+spec:
+  containers:
+  - name: storage-empty-nginx
+    image: "wangxiaochun/nginx:1.20.0"
+    ports:
+    - containerPort: 80
+      name: http
+    volumeMounts:
+    - name: nginx-data
+      mountPath: /usr/share/nginx/html/
+  - name: storage-empty-busybox
+    image: busybox:1.32.0
+    command:
+    - "/bin/sh"
+    - "-c"
+    - "while true; do echo $(date) > /data/index.html; sleep 1; done"
+    volumeMounts:
+    - name: nginx-data
+      mountPath: /data/
+  volumes:
+  - name: nginx-data
+    emptyDir: {}
+  restartPolicy: Always

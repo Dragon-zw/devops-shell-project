@@ -1,0 +1,26 @@
+# storage-hostpath-redis.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "hostpath-redis"
+  namespace: default
+  labels:
+    app: "hostpath-redis"
+spec:
+  # 指定部署的节点
+  nodeName: "k8s-node1"
+  containers:
+  - name: hostpath-redis
+    image: "redis:6.2.5"
+    ports:
+    - containerPort: 6379
+      name: redis
+    volumeMounts:
+    - name: redis-backup
+      mountPath: /data
+  volumes:
+  - name: redis-backup
+    hostPath:
+      path: /backup/redis
+  restartPolicy: Always
+

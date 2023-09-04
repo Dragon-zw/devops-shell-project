@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-nginx-pvc
+  namespace: default
+  labels:
+    app: deployment-nginx-pvc
+spec:
+  selector:
+    matchLabels:
+      app: deployment-nginx-pvc
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: deployment-nginx-pvc
+    spec:
+      containers:
+      - name: deployment-nginx-pvc
+        image: "wangxiaochun/nginx:1.20.0"
+        ports:
+        - containerPort: 80
+          name: nginx-port
+        volumeMounts:
+        - name: volume-nginx
+          mountPath: "/usr/share/nginx/html"
+      volumes:
+      - name: volume-nginx
+        persistentVolumeClaim:
+          claimName: pvc-test
+      restartPolicy: Always
