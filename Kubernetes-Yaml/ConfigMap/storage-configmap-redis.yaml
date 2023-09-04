@@ -1,0 +1,40 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: redis-conf
+  namespace: default
+data:
+  redis.conf: |
+    appendonly yes
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "cm-redis-demo"
+  namespace: default
+  labels:
+    app: "cm-redis-demo"
+spec:
+  containers:
+  - name: cm-redis-demo
+    image: "redis:6.0"
+    command:
+    - redis-server
+    - "/conf/redis.conf"
+    ports:
+    - containerPort: 6379
+      name: redis
+    volumeMounts:
+    - name: redis-data
+      mountPath: /data
+    - name: redis-conf
+      mountPath: /conf
+  volumes:
+  - name: redis-data
+    emptyDir: {}
+  - name: redis-conf
+    configMap:
+      name: redis-conf
+      items:
+      - key: redis.conf
+        path: redis.conf

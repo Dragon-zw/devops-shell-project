@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-test # 注意：不支持大写字母
+  namespace: default
+  labels:
+    app: pv-test
+spec:
+  capacity:
+    storage: 3Gi
+  accessModes:
+  - ReadWriteOnce
+  nfs:
+    server: 10.0.0.50
+    path: /nfs-data

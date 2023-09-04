@@ -1,0 +1,33 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: cm-pod-test
+  namespace: default
+data:
+# host: 0.0.0.0
+# port: "8888"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "pod-test"
+  namespace: default
+  labels:
+    app: "pod-test"
+spec:
+  containers:
+  - name: pod-test
+    image: "wangxiaochun/pod-test:v0.1"
+    env:
+    - name: HOST
+      valueFrom:
+        configMapKeyRef:
+          name: cm-pod-test
+          key: host
+          optional: true
+    - name: PORT
+      valueFrom:
+        configMapKeyRef:
+          name: cm-pod-test
+          key: port
+          optional: false

@@ -1,0 +1,49 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: cm-nginx-index
+  namespace: default
+data:
+  index.html: "Nginx ConfigMap Page!" # 单行内容的文件生成的configMap
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "pod-cm-nginx-conf"
+  namespace: default
+  labels:
+    app: "pod-cm-nginx-conf"
+spec:
+  containers:
+  - name: pod-cm-nginx-conf
+    image: "wangxiaochun/nginx:1.20.0"
+    ports:
+    - containerPort: 8888
+      name: http
+    volumeMounts:
+    - name: nginx-conf
+      mountPath: /etc/nginx/conf.d/
+      readOnly: true # 只读模式
+    - name: nginx-index
+      mountPath: /usr/share/nginx/html/
+      readOnly: true # 只读模式
+  volumes:
+  - name: nginx-conf
+    configMap:
+      name: cm-nginx-conf-files
+      items:
+      - key: myserver.conf
+        path: myserver.conf
+        mode: 0644
+      - key: myserver-status.cfg
+        path: myserver-status.cfg
+        mode: 0644
+      - key: myserver-gzip.cfg
+        path: myserver-gzip.cfg
+        mode: 0644
+      optional: false
+  - name: nginx-index
+    configMap:
+      name: cm-nginx-index
+      optional: false
+  restartPolicy: Always

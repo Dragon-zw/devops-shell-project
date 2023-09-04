@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "pod-nginx-multi"
+  namespace: default
+  labels:
+    app: "pod-nginx-multi"
+spec:
+  containers:
+  - name: pod-nginx-multi
+    image: "wangxiaochun/nginx:1.20.0"
+    ports:
+    - containerPort: 80
+      name: http
+    volumeMounts:
+    - name: volume-nginx
+      mountPath: "/usr/share/nginx/html"
+  volumes:
+  - name: volume-nginx
+    persistentVolumeClaim:
+      claimName: pvc-demo-1
+  restartPolicy: Always

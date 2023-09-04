@@ -1,0 +1,23 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: cm-nginx
+  namespace: default
+data:
+  NGINX_PORT: "10086"
+  NGINX_USER: "www"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "config-envfrom-test"
+  namespace: default
+  labels:
+    app: "config-envfrom-test"
+spec:
+  containers:
+  - name: config-envfrom-test
+    image: "wangxiaochun/nginx:1.20.0"
+    envFrom: # 指定 ConfigMap
+    - configMapRef:
+        name: "cm-nginx" # 所有变量从CM中读取

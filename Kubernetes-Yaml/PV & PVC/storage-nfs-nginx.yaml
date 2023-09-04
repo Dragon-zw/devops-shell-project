@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: storage
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-nfs
+  namespace: storage
+  labels:
+    app: nginx-nfs
+spec:
+  selector:
+    matchLabels:
+      app: nginx-nfs
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: nginx-nfs
+    spec:
+      containers:
+      - name: nginx-nfs
+        image: "wangxiaochun/nginx:1.20.0"
+        ports:
+        - containerPort: 80
+          name: nginx-port
+        volumeMounts:
+        - name: localtime
+          mountPath: /etc/localtime
+        - name: nginx-data
+          mountPath: /usr/share/nginx/html/
+      volumes:
+      - name: localtime
+        hostPath:
+          path: /usr/share/zoneinfo/Asia/Shanghai
+      - name: nginx-data
+        nfs:
+          server: 10.0.0.50
+          path: /nfs-data
+          readOnly: false
+      restartPolicy: Always
